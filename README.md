@@ -1,1 +1,1 @@
-Config files for my GitHub website.
+Configuration files for my personal professional website.
