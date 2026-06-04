@@ -255,7 +255,41 @@
                         </div>
                         <div class="project-body">
                             <h3>SciML-Fluid-Particle</h3>
-                            <p>A comprehensive machine learning framework for the modelling and optimisation of fluid-particle problems in membrane bioreactors and stirred tanks.</p>
+                            <p><!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--   POD ROM Showcase — interactive demo embedded from /rom/           -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section id="rom-showcase" style="max-width:1200px;margin:60px auto;padding:0 20px;">
+  <h2 style="font-size:1.8rem;margin-bottom:8px;">
+    Interactive POD Reduced-Order Model
+  </h2>
+  <p style="color:#555;margin-bottom:16px;line-height:1.6;">
+    A real-time ROM of a CFD mixing-elbow simulation. Adjust the inlet
+    parameters and the temperature, pressure, and velocity fields are
+    predicted in your browser using proper orthogonal decomposition and
+    thin-plate-spline RBF interpolation — no server required.
+  </p>
+
+  <!-- Responsive iframe wrapper (16:9 aspect ratio, scales with viewport) -->
+  <div style="position:relative;width:100%;padding-top:62%;
+              border-radius:8px;overflow:hidden;
+              box-shadow:0 4px 18px rgba(0,0,0,.12);
+              border:1px solid #d0d7de;background:#0d1117;">
+    <iframe src="rom/"
+            loading="lazy"
+            title="POD ROM — Mixing Elbow"
+            allow="fullscreen"
+            style="position:absolute;top:0;left:0;
+                   width:100%;height:100%;border:0;">
+    </iframe>
+  </div>
+
+  <p style="text-align:right;margin-top:10px;font-size:0.9rem;">
+    <a href="rom/" target="_blank"
+       style="color:#0969da;text-decoration:none;">
+      Open full screen ↗
+    </a>
+  </p>
+</section>.</p>
                             <div class="project-tags">
                                 <span class="tag">Python</span>
                                 <span class="tag">MATLAB</span>
