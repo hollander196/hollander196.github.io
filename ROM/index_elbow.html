@@ -1,594 +1,904 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dr. Benjamin Oyegbile - Computational Researcher & Data Scientist</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>POD ROM · Mixing Elbow</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;--bd:#30363d;--bd2:#444c56;--tx:#e6edf3;--tx2:#b1bac4;--tx3:#7d8590;--ac:#58a6ff;--ac2:#1f6feb;--gn:#56d364;--yw:#d29922;--rd:#f85149;}
+html,body{height:100%;overflow:hidden;background:var(--bg);
+  font-family:'IBM Plex Mono',monospace;color:var(--text);font-size:13px}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:100vh}
+#sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#viewport{flex:1;position:relative;overflow:hidden}
+
+/* ── SIDEBAR HEADER ── */
+#sidebar-header{
+  padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0
+}
+#sidebar-header h1{font-size:11px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+#sidebar-header p{font-size:10px;color:var(--text3);line-height:1.5}
+
+/* ── SIDEBAR SCROLL ── */
+#sidebar-body{flex:1;overflow-y:auto;padding:14px 14px 20px}
+#sidebar-body::-webkit-scrollbar{width:3px}
+#sidebar-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── SECTION ── */
+.sec{margin-bottom:18px}
+.sec-title{
+  font-size:9px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:8px;padding-bottom:4px;
+  border-bottom:1px solid var(--border)
+}
+
+/* ── SLIDER ROWS ── */
+.param-row{margin-bottom:10px}
+.param-label{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:3px;font-size:10px;
+}
+.param-name{color:var(--text2)}
+.param-val{
+  color:var(--text);font-weight:600;font-size:11px;
+  min-width:52px;text-align:right
+}
+.param-val input[type=number]{
+  width:60px;background:var(--bg4);border:1px solid var(--border);
+  color:var(--text);font-family:inherit;font-size:10px;padding:2px 5px;
+  border-radius:3px;text-align:right;outline:none;
+}
+.param-val input[type=number]:focus{border-color:var(--accent2)}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--bg4);border-radius:2px;outline:none;
+  border:1px solid var(--border);cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;
+  background:var(--accent);border-radius:50%;
+  border:2px solid var(--bg2);cursor:pointer;
+  transition:background .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{background:#79c0ff}
+.param-range{
+  display:flex;justify-content:space-between;
+  font-size:8px;color:var(--text3);margin-top:1px
+}
+
+/* ── FIELD TOGGLE ── */
+.field-btns{display:flex;gap:4px}
+.field-btn{
+  flex:1;padding:7px 4px;font-size:10px;font-family:inherit;
+  background:var(--bg4);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;border-radius:4px;
+  transition:all .15s;letter-spacing:.05em;text-transform:uppercase;
+}
+.field-btn:hover{border-color:var(--accent2);color:var(--text)}
+.field-btn.active{background:var(--accent2);border-color:var(--accent);color:#fff}
+
+/* ── PREDICT BUTTON ── */
+#btn-predict{
+  width:100%;padding:9px;font-size:11px;font-family:inherit;
+  font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--accent2);border:1px solid var(--accent);
+  color:#fff;cursor:pointer;border-radius:5px;
+  transition:all .15s;margin-bottom:12px;
+}
+#btn-predict:hover{background:var(--accent);box-shadow:0 0 12px rgba(88,166,255,.3)}
+#btn-predict:disabled{background:var(--bg4);border-color:var(--border);
+  color:var(--text3);cursor:not-allowed;box-shadow:none}
+#btn-predict.loading::after{content:" …"}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.stat-box{
+  background:var(--bg4);border:1px solid var(--border);
+  border-radius:4px;padding:7px 9px
+}
+.stat-val{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.stat-lbl{font-size:8.5px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.07em;margin-top:1px}
+
+/* ── ROM INFO ── */
+.rom-info{font-size:9px;color:var(--text3);line-height:1.8}
+.rom-info span{color:var(--text2)}
+
+/* ── EXTRAPOLATION WARNING ── */
+#warn-extrap{
+  display:none;padding:7px 10px;background:rgba(210,153,34,.1);
+  border:1px solid rgba(210,153,34,.35);border-radius:4px;
+  font-size:9.5px;color:var(--yellow);line-height:1.5;margin-bottom:10px
+}
+
+/* ── VIEWPORT OVERLAYS ── */
+#loading-overlay{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  background:var(--bg);z-index:100
+}
+.spinner{
+  width:36px;height:36px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-text{font-size:12px;color:var(--text2)}
+.ld-sub{font-size:10px;color:var(--text3)}
+
+#canvas-container{width:100%;height:100%}
+canvas{display:block}
+
+/* ── COLORBAR ── */
+#colorbar{
+  position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:flex-end;gap:0;
+  pointer-events:none;
+}
+#cb-max{font-size:9px;color:var(--text2);margin-bottom:4px;white-space:nowrap}
+#cb-canvas{width:18px;height:220px;border:1px solid var(--border2);border-radius:2px}
+#cb-min{font-size:9px;color:var(--text2);margin-top:4px;white-space:nowrap}
+#cb-unit{font-size:9px;color:var(--text3);margin-top:10px;
+  writing-mode:vertical-rl;letter-spacing:.06em;text-align:center}
+
+/* ── FIELD LABEL OVERLAY ── */
+#field-label{
+  position:absolute;left:14px;top:12px;
+  font-size:10px;font-weight:600;color:var(--accent);
+  letter-spacing:.1em;text-transform:uppercase;
+  pointer-events:none;
+}
+
+/* ── TOOLTIP ── */
+#tooltip{
+  position:absolute;display:none;pointer-events:none;
+  background:rgba(13,17,23,.9);border:1px solid var(--border);
+  border-radius:4px;padding:5px 9px;font-size:10px;color:var(--text);
+  backdrop-filter:blur(4px);
+}
+
+/* ── RESET CAMERA BTN ── */
+#btn-reset{
+  position:absolute;left:14px;bottom:14px;
+  padding:5px 10px;font-size:9px;font-family:inherit;
+  font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;border-radius:4px;
+  transition:all .15s;
+}
+#btn-reset:hover{border-color:var(--accent2);color:var(--text)}
+.hidden{display:none!important}
+
+/* ── POD Mode Energy ───────────────────────────────────────── */
+.ene-tabs{display:flex;gap:3px;margin-bottom:8px}
+.ene-tab{flex:1;padding:5px;font-size:9px;font-family:inherit;
+  background:var(--bg4);border:1px solid var(--bd);color:var(--tx2);
+  cursor:pointer;border-radius:3px;letter-spacing:.05em;
+  text-transform:uppercase;transition:all .15s}
+.ene-tab:hover{border-color:var(--ac2);color:var(--tx)}
+.ene-tab.on{background:var(--ac2);border-color:var(--ac);color:#fff}
+#ene-chart{width:100%;height:auto;display:block;background:var(--bg3);
+  border:1px solid var(--bd);border-radius:3px;padding:2px}
+.ene-bar{fill:var(--ac);opacity:.85;transition:opacity .15s}
+.ene-bar:hover{opacity:1;fill:#79c0ff}
+.ene-cum{fill:none;stroke:var(--yw);stroke-width:1.5}
+.ene-dot{fill:var(--yw)}
+.ene-axis{stroke:var(--bd2);stroke-width:.5;opacity:.5}
+.ene-label{fill:var(--tx3);font-size:7px;font-family:'IBM Plex Mono',monospace}
+.ene-info{font-size:9px;color:var(--tx2);line-height:1.5;margin-top:5px;
+  padding:5px 8px;background:var(--bg4);border:1px solid var(--bd);border-radius:3px}
+.ene-info b{color:var(--tx);font-weight:600}
+
+/* ── Training Snapshots ────────────────────────────────────── */
+.snap-hdr{display:flex;font-size:8px;color:var(--tx3);letter-spacing:.08em;
+  text-transform:uppercase;padding:0 8px 4px;border-bottom:1px solid var(--bd)}
+.snap-id-h{width:24px;flex-shrink:0}
+.snap-params-h{flex:1;text-align:right}
+.snap-list{max-height:148px;overflow-y:auto;background:var(--bg3);
+  border:1px solid var(--bd);border-top:none;border-radius:0 0 3px 3px}
+.snap-list::-webkit-scrollbar{width:3px}
+.snap-list::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+.snap-row{padding:5px 8px;border-bottom:1px solid var(--bd);font-size:9.5px;
+  cursor:pointer;display:flex;justify-content:space-between;color:var(--tx2);
+  transition:background .12s,color .12s;font-feature-settings:'tnum'}
+.snap-row:last-child{border-bottom:none}
+.snap-row:hover{background:var(--bg4);color:var(--tx)}
+.snap-row.active{background:var(--ac2);color:#fff}
+.snap-id{color:var(--tx3);font-weight:600;width:24px;flex-shrink:0}
+.snap-row.active .snap-id{color:#fff}
+.snap-params{flex:1;text-align:right}
+.snap-foot{font-size:8.5px;color:var(--tx3);font-style:italic;
+  padding:6px 4px 0;line-height:1.3}
+
+/* ── NEW: Mode Energy Comparison (coloured horizontal bars) ── */
+.hbars{display:flex;flex-direction:column;gap:8px;
+  background:var(--bg3);border:1px solid var(--bd);border-radius:3px;
+  padding:8px 10px}
+.hbar-row{display:flex;align-items:center;gap:8px;font-size:9.5px}
+.hbar-label{width:42px;color:var(--tx2);font-weight:600;flex-shrink:0;
+  font-family:'IBM Plex Mono',monospace}
+.hbar-track{flex:1;height:14px;background:var(--bg2);
+  border-radius:2px;display:flex;overflow:hidden;
+  border:1px solid var(--bd)}
+.hbar-seg{height:100%;transition:opacity .15s;cursor:default;
+  min-width:1px}
+.hbar-seg:hover{opacity:.7;outline:1px solid var(--tx);outline-offset:-1px}
+.hbar-total{width:46px;color:var(--tx);font-weight:600;text-align:right;
+  font-family:'IBM Plex Mono',monospace;flex-shrink:0;
+  font-feature-settings:'tnum'}
+.hbars-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px;
+  padding:5px 8px;background:var(--bg4);border:1px solid var(--bd);
+  border-radius:3px;font-size:8.5px;color:var(--tx3);
+  letter-spacing:.05em;text-transform:uppercase}
+.hbars-legend-item{display:flex;align-items:center;gap:4px;
+  font-feature-settings:'tnum'}
+.hbars-legend-sw{width:9px;height:9px;border-radius:2px;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.15)}
+
+/* ── ROM Statistics ────────────────────────────────────────── */
+.stats-rom{display:flex;flex-direction:column;gap:2px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;
+  padding:4px 8px;background:var(--bg4);border:1px solid var(--bd);
+  border-radius:3px;font-size:9.5px;line-height:1.3}
+.stat-k{color:var(--tx3)}
+.stat-v{color:var(--tx);font-weight:600;font-feature-settings:'tnum';
+  font-family:'IBM Plex Mono',monospace}
+
+  
+/* Per-mode / Cumulative toggle inside the All-Modes section */
+.modes-view{display:flex;gap:3px;margin:6px 0 8px;}
+.modes-view button{flex:1;padding:4px 5px;font-size:8.5px;
+  font-family:inherit;background:var(--bg4);border:1px solid var(--bd);
+  color:var(--tx3);cursor:pointer;border-radius:3px;letter-spacing:.05em;
+  text-transform:uppercase;transition:all .12s}
+.modes-view button:hover{border-color:var(--ac2);color:var(--tx)}
+.modes-view button.on{background:var(--ac2);border-color:var(--ac);color:#fff}
+  
+/* ── Inlet Parameters compact section ─────────────────────────────── */
+.sec-inlets{padding-bottom:8px}
+.inlet-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;
+  font-size:9.5px;font-family:'IBM Plex Mono',monospace}
+.inlet-row:last-child{margin-bottom:0}
+.inlet-lbl{width:24px;color:var(--tx2);font-weight:600;flex-shrink:0;text-align:left}
+.inlet-lbl sub{font-size:7.5px}
+.inlet-sl{flex:1;min-width:0;height:14px;-webkit-appearance:none;
+  background:transparent;cursor:pointer}
+.inlet-sl::-webkit-slider-runnable-track{height:3px;background:var(--bg4);
+  border:1px solid var(--bd);border-radius:2px}
+.inlet-sl::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;
+  border-radius:50%;background:var(--ac);border:0;margin-top:-5px;cursor:pointer}
+.inlet-sl::-moz-range-track{height:3px;background:var(--bg4);
+  border:1px solid var(--bd);border-radius:2px}
+.inlet-sl::-moz-range-thumb{width:11px;height:11px;border:0;border-radius:50%;
+  background:var(--ac);cursor:pointer}
+.inlet-nu{width:54px;font-family:inherit;font-size:9px;padding:3px 4px;
+  background:var(--bg4);border:1px solid var(--bd);color:var(--tx);
+  border-radius:2px;flex-shrink:0;font-feature-settings:'tnum'}
+.inlet-nu:focus{outline:1px solid var(--ac);border-color:var(--ac)}
+.inlet-unit{width:22px;color:var(--tx3);font-size:8px;flex-shrink:0;text-align:left}
+
+/* ── App title ──────────────────────────────────────────────────────── */
+.app-title{font-size:11px;font-weight:700;letter-spacing:.18em;text-align:center;
+  color:var(--tx);padding:10px 8px;margin:10px 0;background:var(--bg2);
+  border:1px solid var(--bd);border-radius:3px;text-transform:uppercase;
+  font-family:'IBM Plex Mono',monospace}
+
+/* ── Field Mode Energy subtitle ─────────────────────────────────────── */
+.sec-sub{font-size:8px;color:var(--tx3);font-weight:400;letter-spacing:.08em;
+  margin-left:4px;text-transform:lowercase}
+
+/* ── Modes list (horizontal bars, one per mode) ────────────────────── */
+.modes-list{background:var(--bg3);border:1px solid var(--bd);border-radius:3px;
+  padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+.mode-row{display:flex;align-items:center;gap:8px;font-size:9.5px}
+.mode-lbl{width:30px;color:var(--tx2);font-weight:600;flex-shrink:0;
+  font-family:'IBM Plex Mono',monospace}
+.mode-track{flex:1;height:13px;background:var(--bg2);border-radius:2px;
+  border:1px solid var(--bd);overflow:hidden}
+.mode-bar{height:100%;border-radius:2px 0 0 2px;transition:width .25s ease-out;
+  min-width:1px}
+.mode-pct{width:54px;color:var(--tx);font-weight:600;text-align:right;
+  font-family:'IBM Plex Mono',monospace;flex-shrink:0;
+  font-feature-settings:'tnum'}
+
+  </style>
 </head>
 <body>
-    <header class="navbar" role="banner">
-        <div class="container navbar-inner">
-            <div class="navbar-brand">Dr. Benjamin <span>Oyegbile</span></div>
-            <ul class="navbar-menu">
-                <li><a href="#about">About</a></li>
-                <li><a href="#philosophy">Philosophy</a></li>
-                <li><a href="#interests">Interests</a></li>
-                <li><a href="#publications">Publications</a></li>
-                <li><a href="#projects">Projects</a></li>
-                <li><a href="#skills">Skills</a></li>
-                <li><a href="#experience">Experience</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-            <button class="navbar-toggle" aria-label="Toggle navigation">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+<div id="app">
+
+  <!-- ── SIDEBAR ── -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>POD ROM · Mixing Elbow</h1>
+      <p>Reduced-Order Model<br>Proper Orthogonal Decomposition</p>
+    </div>
+    <div id="sidebar-body">
+
+      <div id="warn-extrap">
+        ⚠ Parameters outside training range.<br>Extrapolation — accuracy may be reduced.
+      </div>
+
+      <!-- 1. Compact INLET PARAMETERS section -->
+      <div class="sec sec-inlets">
+        <div class="sec-title">Inlet Parameters</div>
+        <div class="inlet-row">
+          <span class="inlet-lbl">v<sub>h</sub></span>
+          <input type="range"  class="inlet-sl" id="sl-vh"  step="0.01"/>
+          <input type="number" class="inlet-nu" id="num-vh" step="0.01"/>
+          <span class="inlet-unit">m/s</span>
         </div>
-    </header>
-
-    <section class="hero">
-        <div class="container hero-grid">
-            <div>
-                <div class="hero-badge">OPEN FOR COLLABORATION</div>
-                <h1 class="hero-name">Dr. Benjamin Oyegbile</h1>
-                <p class="hero-title">Computational Researcher & Data Scientist</p>
-                <p class="hero-description">I develop ML-driven methods and high-performance computational frameworks to accelerate simulations and solve complex engineering problems.</p>
-                <div class="hero-actions">
-                    <a class="btn btn-primary" href="#projects">View Projects</a>
-                    <a class="btn btn-outline" href="#publications">Publications</a>
-                </div>
-            </div>
-
-            <div class="hero-visual">
-                <div class="profile-card">
-                    <div class="profile-avatar">BO</div>
-                    <h3>Dr. Benjamin Oyegbile</h3>
-                    <p>PhD Environmental Engineering Research Scientist</p>
-                    <div class="profile-stats">
-                        <div class="stat-item"><span class="stat-value">10+</span><span class="stat-label">Years</span></div>
-                        <div class="stat-item"><span class="stat-value">20+</span><span class="stat-label">PUBS</span></div>
-                        <div class="stat-item"><span class="stat-value">4</span><span class="stat-label">PROJECTS</span></div>
-                    </div>
-                    <div class="social-links">
-                        <a class="social-link" href="mailto:hollander196n@yahoo.com" aria-label="Email" title="Email">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 2v.2l9 6.3 9-6.3V7l-9 6.3L3 7z"/>
-                            </svg>
-                        </a>
-                        <a class="social-link" href="https://github.com/hollander196" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <path d="M12 0.5C5.65 0.5 0.5 5.65 0.5 12c0 5.08 3.29 9.39 7.86 10.91.57.11.78-.25.78-.55 0-.27-.01-.99-.02-1.94-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .98-.31 3.2 1.18A11.15 11.15 0 0 1 12 6.08c.98 0 1.97.13 2.89.38 2.22-1.49 3.2-1.18 3.2-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14 0 1.54-.01 2.78-.01 3.16 0 .3.21.67.79.55A11.52 11.52 0 0 0 23.5 12c0-6.35-5.15-11.5-11.5-11.5z"/>
-                            </svg>
-                        </a>
-                        <a class="social-link" href="https://scholar.google.com/citations?user=g2ELWvsAAAAJ&hl=en" target="_blank" rel="noopener" aria-label="Google Scholar" title="Google Scholar">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <path d="M12 2 1 8l11 6 9-4.91V17h2V8L12 2zm-6 9.91V15c0 2.76 2.69 5 6 5s6-2.24 6-5v-3.09l-6 3.27-6-3.27z"/>
-                            </svg>
-                        </a>
-                        <a class="social-link" href="https://orcid.org/0000-0002-5924-2093" target="_blank" rel="noopener" aria-label="ORCID" title="ORCID">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <circle cx="12" cy="12" r="10"/>
-                                <text x="12" y="15" text-anchor="middle" font-size="7" font-family="Arial, sans-serif" fill="#ffffff">iD</text>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <div class="inlet-row">
+          <span class="inlet-lbl">T<sub>h</sub></span>
+          <input type="range"  class="inlet-sl" id="sl-Th"  step="0.1"/>
+          <input type="number" class="inlet-nu" id="num-Th" step="0.1"/>
+          <span class="inlet-unit">K</span>
         </div>
-    </section>
-
-    <main>
-        <section id="about" class="section">
-            <div class="container">
-                <h2 class="section-title">About Me</h2>
-                <p class="section-subtitle">Background and Interest</p>
-                <div class="about-grid">
-                    <div class="about-text">
-                        <p>I am a passionate researcher and academic focused on developing innovative Machine Learning and Artificial Intelligence solutions to tackle complex engineering problems. My work bridges the gap between theoretical research and practical applications, utilizing advanced computational methods to drive insights and solutions.</p>
-                        <p>I am currently a visiting researcher at Bradford University, where I develop algorithms and computational frameworks at the intersection of machine learning, high-performance computing, and data science. My work focuses on making large-scale scientific simulations faster through the use of hybrid machine learning models.</p>
-                        <p>My Ph.D. at Brandenburg University explores experimental fluid dynamics analysis of the hydrodynamics and optimisation of micro processes involved in pelleting flocculation. I am passionate about bridging the gap between theoretical computational methods and practical real-world impact.</p>
-                    </div>
-                    <div class="about-highlights">
-                        <article class="highlight-item">
-                            <div class="highlight-icon">🎓</div>
-                            <div>
-                                <h4>Doctoral Researcher – Brandenburg University, 2012-2016</h4>
-                                <p>Department of Process Engineering.</p>
-                            </div>
-                        </article>
-                        <article class="highlight-item">
-                            <div class="highlight-icon">🏛️</div>
-                            <div>
-                                <h4>Postdoctoral Fellow – Stellenbosch University, 2017–2021</h4>
-                                <p>Department of Process Engineering.</p>
-                            </div>
-                        </article>
-                        <article class="highlight-item">
-                            <div class="highlight-icon">📍</div>
-                            <div>
-                                <h4>Research Fellow – Newcastle University, 2024–2025</h4>
-                                <p>Department of Chemical Engineering</p>
-                            </div>
-                        </article>
-                        <article class="highlight-item">
-                            <div class="highlight-icon">🤝</div>
-                            <div>
-                                <h4>Mentorship & Open Source</h4>
-                                <p>Mentored undergraduate and postgraduate students in CFD and data science, with active contributions to scientific computing and CFD open-source projects.</p>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="philosophy" class="section">
-            <div class="container">
-                <h2 class="section-title">Research Philosophy</h2>
-                <p class="section-subtitle">A research approach grounded in scientific discovery, interdisciplinary curiosity, and societal impact.</p>
-                <p>My research philosophy is grounded in the application of scientific discovery to address pressing societal problems, thereby transforming lives and positively impacting communities. I strongly believe that impactful research arises from deep understanding of core principles, combined with a willingness to explore interdisciplinary frontiers.</p>
-                <p>Collaboration is central to my scientific approach, and I actively seek partnerships across disciplines to amplify the reach and relevance of my research. Whether in developing sustainable process engineering solutions in the water and wastewater sector or investigating complex fluid-particle dynamics and novel transport phenomena models, my research work is primarily driven by curiosity and purpose.</p>
-            </div>
-        </section>
-
-        <section id="interests" class="section research-bg">
-            <div class="container">
-                <h2 class="section-title">Research Interests</h2>
-                <p class="section-subtitle">Core areas of focus and expertise</p>
-                <div class="research-grid">
-                    <article class="research-card">
-                        <span class="research-icon">⚗️</span>
-                        <h3>Physicochemical Simulation</h3>
-                        <p>Investigating systems where heat transfer, mass transfer, fluid motion, and chemical transformation are tightly coupled. The emphasis is on multiscale simulation that connects molecular behavior, reactive transport, and phase dynamics to the design of complex engineering and environmental processes.</p>
-                    </article>
-                    <article class="research-card">
-                        <span class="research-icon">🌊</span>
-                        <h3>Computational Fluid Dynamics</h3>
-                        <p>Applying numerical solutions of the Navier-Stokes equations to understand turbulent, multiphase, and transport-dominated flows in realistic systems. The goal is to turn high-fidelity simulation into practical insight for reactor design, flow control, and performance optimisation across challenging fluid environments.</p>
-                    </article>
-                    <article class="research-card">
-                        <span class="research-icon">🧠</span>
-                        <h3>Scientific Machine Learning</h3>
-                        <p>Developing physics-aware machine learning models that embed governing equations, conservation laws, and scientific structure into data-driven prediction. This includes physics-informed neural networks, neural operators, and surrogate models that make simulation faster, more scalable, and more reliable in scientific and engineering settings.</p>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section id="publications" class="section">
-            <div class="container">
-                <h2 class="section-title">Selected Publications</h2>
-                <p class="section-subtitle">Peer-reviewed papers, preprints, book, and book chapters</p>
-                <div class="pub-list">
-                    <article class="pub-item">
-                        <div class="pub-meta">
-                            <span class="pub-year">2026</span>
-                            <span class="pub-venue">Taylor & Francis</span>
-                            <span class="pub-type">Book</span>
-                        </div>
-                        <h3><a href="https://doi.org/10.1201/9781003518426" target="_blank" rel="noopener">Modelling and Optimisation of Fluid-Particle Processes in Environmental Engineering</a></h3>
-                        <p class="pub-authors"><strong>Authors:</strong> B. Oyegbile, S. Yala</p>
-                        <div class="pub-links">
-                            <a class="pub-link" href="https://doi.org/10.1201/9781003518426" target="_blank" rel="noopener">Book</a>
-                        </div>
-                    </article>
-
-                    <article class="pub-item">
-                        <div class="pub-meta">
-                            <span class="pub-year">2024</span>
-                            <span class="pub-venue">PLOSOne</span>
-                            <span class="pub-type">Paper</span>
-                        </div>
-                        <h3><a href="https://doi.org/10.1371/journal.pone.0294179" target="_blank" rel="noopener">Evaluation of the Engineering Properties of Asphaltic Concrete Composites Produced from Recycled Asphalt Pavement and Polyethylene Plastic</a></h3>
-                        <p class="pub-authors"><strong>Authors:</strong> B. Oyegbile, D. Olukanni, U. Akanimo</p>
-                        <div class="pub-links">
-                            <a class="pub-link" href="https://doi.org/10.1371/journal.pone.0294179" target="_blank" rel="noopener">Paper</a>
-                        </div>
-                    </article>
-
-                    <article class="pub-item">
-                        <div class="pub-meta">
-                            <span class="pub-year">2020</span>
-                            <span class="pub-venue">South African Journal of Chemical Engineering</span>
-                            <span class="pub-type">Paper</span>
-                        </div>
-                        <h3><a href="https://doi.org/10.1016/j.sajce.2020.05.008" target="_blank" rel="noopener">Modelling the Dynamics of Granular Particle Interactions in a Vortex Reactor using a Coupled DPM-KTGF Model</a></h3>
-                        <p class="pub-authors"><strong>Authors:</strong> B. Oyegbile, M. Akdogan, M. Karimi</p>
-                        <div class="pub-links">
-                            <a class="pub-link" href="https://doi.org/10.1016/j.sajce.2020.05.008" target="_blank" rel="noopener">Paper</a>
-                        </div>
-                    </article>
-
-                    <article class="pub-item">
-                        <div class="pub-meta">
-                            <span class="pub-year">2017</span>
-                            <span class="pub-venue">Journal of Environmental Chemical Engineering</span>
-                            <span class="pub-type">Paper</span>
-                        </div>
-                        <h3><a href="https://doi.org/10.1016/j.jece.2017.04.016" target="_blank" rel="noopener">Experimental Analysis of the Hydrodynamics, Flow Pattern and Wet Agglomeration in Rotor-Stator Vortex Separators</a></h3>
-                        <p class="pub-authors"><strong>Authors:</strong> B. Oyegbile, M. Hoff, M. Adonadaga, O. Oyegbile</p>
-                        <div class="pub-links">
-                            <a class="pub-link" href="https://doi.org/10.1016/j.jece.2017.04.016" target="_blank" rel="noopener">Paper</a>
-                        </div>
-                    </article>
-
-                    <article class="pub-item">
-                        <div class="pub-meta">
-                            <span class="pub-year">2016</span>
-                            <span class="pub-venue">Journal of Water Reuse and Desalination</span>
-                            <span class="pub-type">Paper</span>
-                        </div>
-                        <h3><a href="https://doi.org/10.2166/wrd.2015.057" target="_blank" rel="noopener">Optimisation of Micro-Processes for Shear Assisted Solid-Liquid Separation in a Rotatory Batch Flow Vortex Reactor</a></h3>
-                        <p class="pub-authors"><strong>Authors:</strong> B. Oyegbile, P. Ay, S. Narra</p>
-                        <div class="pub-links">
-                            <a class="pub-link" href="https://doi.org/10.2166/wrd.2015.057" target="_blank" rel="noopener">Paper</a>
-                        </div>
-                    </article>
-
-                    <article class="pub-item">
-                        <div class="pub-meta">
-                            <span class="pub-year">2016</span>
-                            <span class="pub-venue">CRC Balkema</span>
-                            <span class="pub-type">Book</span>
-                        </div>
-                        <h3><a href="https://doi.org/10.1201/9781315671871" target="_blank" rel="noopener">Optimization of Micro Processes in Fine Particle Agglomeration by Pelleting Flocculation</a></h3>
-                        <p class="pub-authors"><strong>Authors:</strong> B. Oyegbile</p>
-                        <div class="pub-links">
-                            <a class="pub-link" href="https://doi.org/10.1201/9781315671871" target="_blank" rel="noopener">Book</a>
-                        </div>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section id="projects" class="section projects-bg">
-            <div class="container">
-                <h2 class="section-title">Projects</h2>
-                <p class="section-subtitle">Open-source tools, research software, and side projects</p>
-                <div class="projects-grid">
-                    <article class="project-card">
-                        <div class="project-header">
-                            <div class="project-icon">🧪</div>
-                            <span class="project-status active">Active</span>
-                        </div>
-                        <div class="project-body">
-                            <h2><a href="ROM/index_elbow.html">SciML Mixing Elbow ROM</a></h2>
-                            <p>An interactive static reduced order model (ROM) of a mixing elbow developed in python using ANSYS fluent API</p>
-                            <div class="project-tags">
-                                <span class="tag">Python</span>
-                                <span class="tag">MATLAB</span>
-                            </div>
-                        </div>
-                                        </article>
-                    <article class="project-card">
-                        <div class="project-header">
-                            <div class="project-icon">📊</div>
-                            <span class="project-status active">Active</span>
-                        </div>
-                        <div class="project-body">
-                            <h2><a href="ROM/index_str.html">SciML Stirred Tank ROM</a></h2>
-                            <p>An interactive static reduced order model (ROM) of a stirred tank reactor (STR) developed in python using ANSYS fluent API</p>
-                            <div class="project-tags">
-                                <span class="tag">Python</span>
-                                <span class="tag">MATLAB</span>
-                            </div>
-                        </div>
-                    </article>
-                    <article class="project-card">
-                        <div class="project-header">
-                            <div class="project-icon">🧪</div>
-                            <span class="project-status active">Active</span>
-                        </div>
-                        <div class="project-body">
-                            <h2><a href="ROM/index_mbr.html">SciML Membrane Bioeactor ROM</a></h2>
-                            <p>An interactive static reduced order model (ROM) of a membrane bioreactor (MBR) developed in python using ANSYS fluent API</p>
-                            <div class="project-tags">
-                                <span class="tag">Python</span>
-                                <span class="tag">MATLAB</span>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section id="skills" class="section">
-            <div class="container">
-                <h2 class="section-title">Skills &amp; Tools</h2>
-                <p class="section-subtitle">Core technical strengths and platforms for computational research</p>
-
-                <div class="skills-grid">
-                    <div class="skill-category">
-                        <h3>Programming Languages</h3>
-                        <div class="skill-list">
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Python</span>
-                                    <span class="skill-pct">95%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:95%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">MATLAB</span>
-                                    <span class="skill-pct">90%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:90%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">C/C++</span>
-                                    <span class="skill-pct">80%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:80%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Julia</span>
-                                    <span class="skill-pct">75%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:75%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">CUDA/OpenMP</span>
-                                    <span class="skill-pct">65%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:65%"></div></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="skill-category">
-                        <h3>ML &amp; Data Science</h3>
-                        <div class="skill-list">
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">PyTorch</span>
-                                    <span class="skill-pct">92%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:92%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Scikit-learn</span>
-                                    <span class="skill-pct">90%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:90%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">NumPy/SciPy</span>
-                                    <span class="skill-pct">95%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:95%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Pandas</span>
-                                    <span class="skill-pct">88%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:88%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Hugging Face</span>
-                                    <span class="skill-pct">72%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:72%"></div></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="skill-category">
-                        <h3>Infrastructure &amp; DevOps</h3>
-                        <div class="skill-list">
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Linux/HPC Clusters</span>
-                                    <span class="skill-pct">90%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:90%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Docker/Apptainer</span>
-                                    <span class="skill-pct">85%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:85%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Git/GitHub Actions</span>
-                                    <span class="skill-pct">80%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:80%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">Slurm/PBS</span>
-                                    <span class="skill-pct">78%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:78%"></div></div>
-                            </div>
-                            <div class="skill-item">
-                                <div class="skill-header">
-                                    <span class="skill-name">AWS/GCP</span>
-                                    <span class="skill-pct">70%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar" style="width:70%"></div></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tools-additional">
-                    <h3>Additional Tools &amp; Technologies</h3>
-                    <div class="tools-grid">
-                        <span class="tool-badge">🧪 Jupyter</span>
-                        <span class="tool-badge">📉 Matplotlib</span>
-                        <span class="tool-badge">📊 Seaborn</span>
-                        <span class="tool-badge">🌐 Plotly</span>
-                        <span class="tool-badge">⚗️ FEniCS</span>
-                        <span class="tool-badge">🔢 PETSc</span>
-                        <span class="tool-badge">🔗 MPI4py</span>
-                        <span class="tool-badge">📦 Conda</span>
-                        <span class="tool-badge">🦀 Rust</span>
-                        <span class="tool-badge">🗄️ PostgreSQL</span>
-                        <span class="tool-badge">🔄 Snakemake</span>
-                        <span class="tool-badge">📋 MLflow</span>
-                        <span class="tool-badge">🔭 Weights &amp; Biases</span>
-                        <span class="tool-badge">🚀 FastAPI</span>
-                        <span class="tool-badge">☸️ Kubernetes</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="experience" class="section timeline-bg">
-            <div class="container">
-                <h2 class="section-title">Experience</h2>
-                <p class="section-subtitle">Academic and professional positions</p>
-
-                <div class="timeline">
-                    <article class="timeline-item">
-                        <span class="timeline-dot" aria-hidden="true"></span>
-                        <div class="timeline-card">
-                            <div class="timeline-header">
-                                <h3 class="timeline-role">Postdoctoral Researcher</h3>
-                                <span class="timeline-period">2024 - 2025</span>
-                            </div>
-                            <p class="timeline-org">Department of Chemical Engineering, Newcastle University · Newcastle, UK</p>
-                            <ul>
-                                <li>Led an EPSRC-funded project on the scale-up modelling of HTC reactor.</li>
-                                <li>Prepare a CFD protocol for the simulation of hydrothermal carbonisation process.</li>
-                                <li>Developed a multiphase model to simulate conjugate heat transfer and convective transport in HTC reactor.</li>
-                                <li>Collaborated with industry partners to implement simulation-based optimisation of HTC process in a pilot-scale reactor.</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                                        <article class="timeline-item">
-                        <span class="timeline-dot" aria-hidden="true"></span>
-                        <div class="timeline-card">
-                            <div class="timeline-header">
-                                <h3 class="timeline-role">Postdoctoral Researcher</h3>
-                                <span class="timeline-period">2017 - 2021</span>
-                            </div>
-                            <p class="timeline-org">Department of Process Engineering, Stellenbosch University · Stellenbosch, SA</p>
-                            <ul>
-                                <li>Led the Computational Fluid Dynamics group's effort on the development of computational model for pelleting flocculation.</li>
-                                <li>Developed multiphase CFD models to simulate pelleting flocculation process.</li>
-                                <li>Implemented custom User Defined Functions (UDFs) in ANSYS Fluent and OpenFOAM.</li>
-                                <li>Mentored 2 Ph.D. students and co-supervised 2 undergraduate thesis projects.</li>
-                                <li>Secured $20k in collaborative grant funding for African research collaboration.</li>
-                            </ul>
-                        </div>
-                    </article>
-                    
-                    <article class="timeline-item">
-                        <span class="timeline-dot" aria-hidden="true"></span>
-                        <div class="timeline-card">
-                            <div class="timeline-header">
-                                <h3 class="timeline-role">Doctorer Researcher</h3>
-                                <span class="timeline-period">2012 - 2016</span>
-                            </div>
-                            <p class="timeline-org">Brandenburg University · Department of Process Engineering · Cottbus, DE</p>
-                            <ul>
-                                <li>Dissertation: "Optimization of Micro Processes in Fine Particle Agglomeration by Pelleting Flocculation".</li>
-                                <li>Designed a vortex reactor for the agglomeration of sludge and synthetic wastewater.</li>
-                                <li>Filed and secured a patent for the developed reactor design and the agglomeration technique.</li>
-                                <li>Implemented research methods and experimental procedures aimed at improving the understanding of hydrodynamics in a vortex reactor.</li>
-                            </ul>
-                        </div>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <section id="contact" class="section">
-            <div class="container">
-                <h2 class="section-title">Get in Touch</h2>
-                <p class="section-subtitle">Open to collaborations, speaking invitations, and student inquiries</p>
-
-                <div class="contact-grid">
-                    <div class="contact-info">
-                        <h3>Let's Talk</h3>
-                        <p>Whether you are a researcher interested in collaboration, a student looking for guidance, or an organisation exploring data science partnerships — I'd love to hear from you. Feel free to reach out via email or connect on any of the platforms below.</p>
-                        <div class="contact-details">
-                            <div class="contact-item">
-                                <div class="contact-item-icon">✉️</div>
-                                <div class="contact-item-text">
-                                    <span>Email</span>
-                                    <a href="mailto:hollander196n@yahoo.com">hollander196@yahoo.com</a>
-                                </div>
-                            </div>
-                            <div class="contact-item">
-                                <div class="contact-item-icon">🐙</div>
-                                <div class="contact-item-text">
-                                    <span>GitHub</span>
-                                    <a href="https://github.com/hollander196" target="_blank" rel="noopener">github.com/hollander196</a>
-                                </div>
-                            </div>
-                            <div class="contact-item">
-                                <div class="contact-item-icon">🎓</div>
-                                <div class="contact-item-text">
-                                    <span>Google Scholar</span>
-                                    <a href="https://scholar.google.com/citations?user=g2ELWvsAAAAJ&hl=en" target="_blank" rel="noopener">View Profile</a>
-                                </div>
-                            </div>
-                            <div class="contact-item">
-                                <div class="contact-item-icon">🔬</div>
-                                <div class="contact-item-text">
-                                    <span>ORCID</span>
-                                    <a href="https://orcid.org/0000-0002-5924-2093" target="_blank" rel="noopener">0000-0002-5924-2093</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="contact-form">
-                        <form id="contactForm" novalidate>
-                            <div class="form-group">
-                                <label for="contactName">Full Name</label>
-                                <input class="form-control" id="contactName" type="text" placeholder="Your full name" required />
-                            </div>
-                            <div class="form-group">
-                                <label for="contactEmail">Email Address</label>
-                                <input class="form-control" id="contactEmail" type="email" placeholder="your@email.com" required />
-                            </div>
-                            <div class="form-group">
-                                <label for="contactSubject">Subject</label>
-                                <input class="form-control" id="contactSubject" type="text" placeholder="What is this about?" />
-                            </div>
-                            <div class="form-group">
-                                <label for="contactMessage">Message</label>
-                                <textarea class="form-control" id="contactMessage" rows="5" placeholder="Your message..." required></textarea>
-                            </div>
-                            <button class="btn btn-primary btn-submit" type="submit">Send Message</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="container footer-inner">
-            <div class="footer-brand">Dr. Benjamin <span>Oyegbile</span></div>
-            <div class="footer-links">
-                <a href="#about">About</a>
-                <a href="#projects">Projects</a>
-                <a href="#experience">Experience</a>
-                <a href="#publications">Publications</a>
-                <a href="#contact">Contact</a>
-            </div>
-            <p>© 2026 Dr. Benjamin Oyegbile · Computational Researcher & Data Scientist · Made with ♥ and science. All rights reserved.</p>
+        <div class="inlet-row">
+          <span class="inlet-lbl">v<sub>c</sub></span>
+          <input type="range"  class="inlet-sl" id="sl-vc"  step="0.01"/>
+          <input type="number" class="inlet-nu" id="num-vc" step="0.01"/>
+          <span class="inlet-unit">m/s</span>
         </div>
-    </footer>
+        <div class="inlet-row">
+          <span class="inlet-lbl">T<sub>c</sub></span>
+          <input type="range"  class="inlet-sl" id="sl-Tc"  step="0.1"/>
+          <input type="number" class="inlet-nu" id="num-Tc" step="0.1"/>
+          <span class="inlet-unit">K</span>
+        </div>
+      </div>
 
-    <script src="main.js" defer></script>
+      <!-- 2. Predict button -->
+      <button id="btn-predict" onclick="runPredict()">▶  Predict</button>
+
+      <!-- 3. App title -->
+      <div class="app-title">POD ROM &mdash; MIXING ELBOW</div>
+
+      <!-- 4. Field Variable -->
+      <div class="sec">
+        <div class="sec-title">Field Variable</div>
+        <div class="field-btns">
+          <button class="field-btn active" id="btn-T" onclick="setField('T')">Temperature</button>
+          <button class="field-btn"        id="btn-P" onclick="setField('P')">Pressure</button>
+          <button class="field-btn"        id="btn-V" onclick="setField('V')">Vel. Mag.</button>
+        </div>
+      </div>
+
+      <!-- 5. Field Statistics -->
+      <div class="sec">
+        <div class="sec-title">Field Statistics</div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-box"><div class="stat-val" id="s-min">—</div><div class="stat-lbl">Min</div></div>
+          <div class="stat-box"><div class="stat-val" id="s-max">—</div><div class="stat-lbl">Max</div></div>
+          <div class="stat-box"><div class="stat-val" id="s-mean">—</div><div class="stat-lbl">Mean</div></div>
+          <div class="stat-box"><div class="stat-val" id="s-std">—</div><div class="stat-lbl">Std Dev</div></div>
+        </div>
+      </div>
+
+      <!-- 6. Field Mode Energy (cumulative horizontal bars) -->
+      <div class="sec">
+        <div class="sec-title">Field Mode Energy <span class="sec-sub">cumulative</span></div>
+        <div class="modes-list" id="modes-list"></div>
+      </div>
+
+      <!-- 7. ROM Statistics -->
+      <div class="sec">
+        <div class="sec-title">ROM Statistics</div>
+        <div class="stats-rom" id="rom-stats"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── VIEWPORT ── -->
+  <div id="viewport">
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="ld-text">Loading ROM …</div>
+      <div class="ld-sub" id="ld-sub">Fetching mesh</div>
+    </div>
+    <div id="canvas-container"></div>
+    <div id="field-label">Temperature  [K]</div>
+    <div id="colorbar">
+      <div id="cb-max">—</div>
+      <canvas id="cb-canvas" width="18" height="220"></canvas>
+      <div id="cb-min">—</div>
+      <div id="cb-unit">K</div>
+    </div>
+    <div id="tooltip"></div>
+    <button id="btn-reset" onclick="resetCamera()">⟳ Reset Camera</button>
+  </div>
+
+</div>
+
+<!-- Three.js + OrbitControls from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+
+// ═══════════════════════════════════════
+//  FIELD MODE ENERGY — cumulative horizontal bars
+//  Tied to the active Field Variable (T / P / V).
+// ═══════════════════════════════════════
+
+const MODE_PALETTE = [
+  '#58a6ff','#56d364','#d29922','#f85149','#bc8cff',
+  '#79c0ff','#3fb950','#e3b341','#ff7b72','#d2a8ff',
+  '#a5d6ff','#7d8590'
+];
+const modeColor = i => MODE_PALETTE[i % MODE_PALETTE.length];
+
+function renderModeBars(info) {
+  info = info || window.ROM_INFO;
+  if (!info) return;
+  const f = window.STATE_FIELD || 'T';
+  const pme = f === 'T' ? info.T_per_mode_energy_pct
+            : f === 'P' ? info.P_per_mode_energy_pct
+            :             info.Vmag_per_mode_energy_pct;
+  const cum = []; let s = 0;
+  for (const e of pme) { s += e; cum.push(s); }
+  const total = cum[cum.length - 1];
+
+  const html = pme.map((e, k) => {
+    const w = (cum[k] / total) * 100;
+    return `<div class="mode-row">` +
+           `<div class="mode-lbl">M${(k+1).toString().padStart(2,'0')}</div>` +
+           `<div class="mode-track">` +
+           `<div class="mode-bar" style="width:${w.toFixed(2)}%;` +
+           `background:${modeColor(k)}" ` +
+           `title="Mode ${k+1} — per-mode ${e.toFixed(3)}% — cumulative ${cum[k].toFixed(3)}%"></div>` +
+           `</div>` +
+           `<div class="mode-pct">${cum[k].toFixed(2)}%</div>` +
+           `</div>`;
+  }).join('');
+  document.getElementById('modes-list').innerHTML = html;
+}
+
+  </script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+const STATE = {
+  field:       'T',         // 'T' or 'P'
+  lastResult:  null,        // last API response
+  meshLoaded:  false,
+  info:        null,
+  debounceTimer: null,
+};
+
+// ═══════════════════════════════════════════════════
+// THREE.JS SETUP
+// ═══════════════════════════════════════════════════
+const container  = document.getElementById('canvas-container');
+const renderer   = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x0d1117);
+container.appendChild(renderer.domElement);
+
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(40, 1, 0.001, 10);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping    = true;
+controls.dampingFactor    = 0.08;
+controls.rotateSpeed      = 0.6;
+controls.zoomSpeed        = 1.2;
+controls.minDistance      = 0.05;
+controls.maxDistance      = 2.0;
+
+// Lights
+const ambLight  = new THREE.AmbientLight(0xffffff, 0.55);
+const dirLight  = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(0.5, 1, 0.8);
+const dirLight2 = new THREE.DirectionalLight(0x8888ff, 0.3);
+dirLight2.position.set(-0.5, -0.5, -0.5);
+scene.add(ambLight, dirLight, dirLight2);
+
+// Mesh object (created after API response)
+let meshObj  = null;
+let geom     = null;
+let colorAttr = null;
+let initCamPos = null;
+
+function resizeRenderer() {
+  const w = container.clientWidth, h = container.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resizeRenderer);
+resizeRenderer();
+
+// Animation loop
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+
+// ═══════════════════════════════════════════════════
+// COLORMAPS
+// ═══════════════════════════════════════════════════
+const CMAPS = {
+  jet: t => {
+    t = Math.max(0, Math.min(1, t));
+    return [
+      Math.max(0, Math.min(1, 1.5 - Math.abs(4*t - 3))),
+      Math.max(0, Math.min(1, 1.5 - Math.abs(4*t - 2))),
+      Math.max(0, Math.min(1, 1.5 - Math.abs(4*t - 1))),
+    ];
+  },
+  coolwarm: t => {
+    t = Math.max(0, Math.min(1, t));
+    return t < 0.5
+      ? [t*2, t*2, 1.0]
+      : [1.0, (1-t)*2, (1-t)*2];
+  },
+  // Viridis approximation (matches matplotlib/PyVista viridis)
+  viridis: t => {
+    t = Math.max(0, Math.min(1, t));
+    const r = Math.max(0, Math.min(1,  0.267 + 0.004*t + 1.665*t*t - 1.282*t*t*t));
+    const g = Math.max(0, Math.min(1,  0.005 + 1.398*t - 0.914*t*t + 0.282*t*t*t));
+    const b = Math.max(0, Math.min(1,  0.329 + 1.498*t - 3.020*t*t + 1.952*t*t*t));
+    return [r, g, b];
+  },
+};
+
+function currentCmap() {
+  if (STATE.field === 'T') return CMAPS.jet;
+  if (STATE.field === 'V') return CMAPS.viridis;
+  return CMAPS.coolwarm;
+}
+
+// ═══════════════════════════════════════════════════
+// MESH INITIALISATION
+// ═══════════════════════════════════════════════════
+function initMesh(data) {
+  const verts   = new Float32Array(data.vertices);   // x0,y0,z0,...
+  const indices = new Uint32Array(data.indices);      // i0,j0,k0,...
+  const nVerts  = data.n_verts;
+
+  geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+
+  // Vertex colors placeholder (grey until first prediction)
+  const colors = new Float32Array(nVerts * 3).fill(0.2);
+  colorAttr = new THREE.BufferAttribute(colors, 3);
+  geom.setAttribute('color', colorAttr);
+  geom.setIndex(new THREE.BufferAttribute(indices, 1));
+  geom.computeVertexNormals();
+
+  const mat = new THREE.MeshPhongMaterial({
+    vertexColors: true,
+    side:          THREE.DoubleSide,
+    shininess:     40,
+    specular:      new THREE.Color(0x222222),
+  });
+
+  meshObj = new THREE.Mesh(geom, mat);
+  scene.add(meshObj);
+
+  // Frame camera
+  const b = data.bounds;
+  const cx = (b.x_min + b.x_max) / 2;
+  const cy = (b.y_min + b.y_max) / 2;
+  const cz = (b.z_min + b.z_max) / 2;
+  const span = Math.max(b.x_max - b.x_min, b.y_max - b.y_min, b.z_max - b.z_min);
+  camera.position.set(cx + span * 1.0, cy + span * 0.6, cz + span * 1.2);
+  camera.lookAt(cx, cy, cz);
+  controls.target.set(cx, cy, cz);
+  initCamPos = {
+    pos: camera.position.clone(),
+    tgt: controls.target.clone(),
+  };
+}
+
+function applyFieldColors(values, vmin, vmax) {
+  const cmap   = currentCmap();
+  const colors = colorAttr.array;
+  const range  = vmax - vmin + 1e-10;
+  for (let i = 0; i < values.length; i++) {
+    const t   = (values[i] - vmin) / range;
+    const rgb = cmap(t);
+    colors[i * 3]     = rgb[0];
+    colors[i * 3 + 1] = rgb[1];
+    colors[i * 3 + 2] = rgb[2];
+  }
+  colorAttr.needsUpdate = true;
+}
+
+// ═══════════════════════════════════════════════════
+// COLORBAR
+// ═══════════════════════════════════════════════════
+function updateColorbar(vmin, vmax) {
+  const canvas = document.getElementById('cb-canvas');
+  const ctx    = canvas.getContext('2d');
+  const h      = canvas.height;
+  const cmap   = currentCmap();
+  for (let py = 0; py < h; py++) {
+    const t = 1 - py / h;
+    const [r, g, b] = cmap(t);
+    ctx.fillStyle = `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;
+    ctx.fillRect(0, py, canvas.width, 1);
+  }
+  const isT = STATE.field === 'T';
+  const isV = STATE.field === 'V';
+  const fmt = isT ? v => v.toFixed(2) : isV ? v => v.toFixed(4) : v => (v/1000).toFixed(3);
+  document.getElementById('cb-max').textContent  = fmt(vmax);
+  document.getElementById('cb-min').textContent  = fmt(vmin);
+  document.getElementById('cb-unit').textContent = isT ? 'K' : isV ? 'm/s' : 'kPa';
+}
+
+// ═══════════════════════════════════════════════════
+// STATS PANEL
+// ═══════════════════════════════════════════════════
+function updateStats(result) {
+  const isT  = STATE.field === 'T';
+  const isV  = STATE.field === 'V';
+  const pfx  = isT ? 'T' : isV ? 'Vmag' : 'P';
+  const fmt  = v => isT ? v.toFixed(2) : isV ? v.toFixed(4) : (v/1000).toFixed(3);
+  const unit = isT ? ' K' : isV ? ' m/s' : ' kPa';
+  document.getElementById('s-min').textContent  = fmt(result[pfx+'_min'])  + unit;
+  document.getElementById('s-max').textContent  = fmt(result[pfx+'_max'])  + unit;
+  document.getElementById('s-mean').textContent = fmt(result[pfx+'_mean']) + unit;
+  document.getElementById('s-std').textContent  = fmt(result[pfx+'_std'])  + unit;
+}
+
+// ═══════════════════════════════════════════════════
+// DISPLAY FIELD
+// ═══════════════════════════════════════════════════
+function displayField(result) {
+  if (!result) return;
+  const isT  = STATE.field === 'T';
+  const isV  = STATE.field === 'V';
+  const vals = isT ? result.T : isV ? result.Vmag : result.P;
+  const vmin = isT ? result.T_min : isV ? result.Vmag_min : result.P_min;
+  const vmax = isT ? result.T_max : isV ? result.Vmag_max : result.P_max;
+  applyFieldColors(vals, vmin, vmax);
+  updateColorbar(vmin, vmax);
+  updateStats(result);
+  document.getElementById('field-label').textContent =
+    isT ? 'Temperature  [K]' : isV ? 'Velocity Magnitude  [m/s]' : 'Pressure  [Pa abs]';
+}
+
+// ═══════════════════════════════════════════════════
+// UI CONTROLS
+// ═══════════════════════════════════════════════════
+function setField(f) {
+  STATE.field = f;
+  document.getElementById('btn-T').classList.toggle('active', f === 'T');
+  document.getElementById('btn-P').classList.toggle('active', f === 'P');
+  document.getElementById('btn-V').classList.toggle('active', f === 'V');
+  if (STATE.lastResult) displayField(STATE.lastResult);
+
+  window.STATE_FIELD = f;
+  if (window.ROM_INFO) {
+    renderModeBars(window.ROM_INFO);
+    renderRomStats(window.ROM_INFO);
+  }
+}
+
+function resetCamera() {
+  if (!initCamPos) return;
+  camera.position.copy(initCamPos.pos);
+  controls.target.copy(initCamPos.tgt);
+  controls.update();
+}
+
+// Sync slider ↔ number input
+function bindParam(slId, numId, boundsKey) {
+  const sl  = document.getElementById(slId);
+  const num = document.getElementById(numId);
+  sl.addEventListener('input', () => { num.value = parseFloat(sl.value).toFixed(3); schedulePredict(); });
+  num.addEventListener('input', () => { sl.value = num.value; schedulePredict(); });
+}
+
+function initControls(info) {
+  const bounds = info.param_bounds;
+  const cols   = info.param_cols;
+
+  function setup(slId, numId, minId, maxId, colIdx) {
+    const col = cols[colIdx];
+    const b   = bounds[col];
+    const mid = ((b.min + b.max) / 2).toFixed(3);
+    const sl  = document.getElementById(slId);
+    const num = document.getElementById(numId);
+    sl.min = b.min; sl.max = b.max; sl.value = mid;
+    num.value = mid;
+    document.getElementById(minId).textContent = (+b.min).toFixed(2);
+    document.getElementById(maxId).textContent = (+b.max).toFixed(2);
+    num.min = b.min - (b.max - b.min);   // allow some extrapolation
+    num.max = b.max + (b.max - b.min);
+    bindParam(slId, numId);
+  }
+
+  setup('sl-vh', 'num-vh', 'sl-vh-min', 'sl-vh-max', 0);
+  setup('sl-Th', 'num-Th', 'sl-Th-min', 'sl-Th-max', 1);
+  setup('sl-vc', 'num-vc', 'sl-vc-min', 'sl-vc-max', 2);
+  setup('sl-Tc', 'num-Tc', 'sl-Tc-min', 'sl-Tc-max', 3);
+
+  // Cache the info object globally so render functions can access it
+  window.ROM_INFO = info;
+  renderRomStats(info);
+  renderModeBars(info);
+}
+
+// ═══════════════════════════════════════
+//  NEW: ROM STATISTICS PANEL
+// ═══════════════════════════════════════
+function renderRomStats(info) {
+  const fmt = n => (typeof n === 'number') ? n.toLocaleString() : n;
+  const rows = [
+    ['Mesh nodes',             fmt(info.n_verts || '—')],
+    ['Training snapshots',     info.n_snapshots],
+    ['POD modes / field',      info.n_modes],
+    ['Parameters',             info.param_cols.length + 'D'],
+    ['Interpolant',            'TPS-RBF'],
+    ['T cumulative energy',    info.T_energy_pct.toFixed(2)    + ' %'],
+    ['P cumulative energy',    info.P_energy_pct.toFixed(2)    + ' %'],
+    ['Vmag cumulative energy', info.Vmag_energy_pct.toFixed(2) + ' %'],
+  ];
+  document.getElementById('rom-stats').innerHTML = rows.map(([k, v]) =>
+    `<div class="stat-row"><span class="stat-k">${k}</span>` +
+    `<span class="stat-v">${v}</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════
+//  NEW: POD MODE ENERGY — vertical bar chart
+// ═══════════════════════════════════════
+
+// ═══════════════════════════════════════
+//  NEW: TRAINING SNAPSHOTS — clickable table
+// ═══════════════════════════════════════
+async function fetchAndRenderSnapshots() {
+  try {
+    const r = await fetch('/api/snapshots');
+    if (!r.ok) throw new Error(r.statusText);
+    const data = await r.json();
+    window.ROM_SNAPS = data.snapshots || [];
+    renderSnapList();
+  } catch (e) {
+    document.getElementById('snap-list').innerHTML =
+      '<div class="snap-row" style="color:var(--tx3);font-style:italic">' +
+      'Snapshots unavailable</div>';
+    console.warn('Could not fetch snapshots:', e);
+  }
+}
+
+// ═══════════════════════════════════════
+//  NEW: MODE ENERGY COMPARISON — coloured horizontal bars
+//  One stacked bar per field showing each mode's contribution.
+// ═══════════════════════════════════════
+
+// Categorical palette — distinct colours, each mode keeps its colour
+// across all three fields so visual comparison is easy.
+
+function getParams() {
+  return [
+    parseFloat(document.getElementById('num-vh').value),
+    parseFloat(document.getElementById('num-Th').value),
+    parseFloat(document.getElementById('num-vc').value),
+    parseFloat(document.getElementById('num-Tc').value),
+  ];
+}
+
+function checkExtrapolation(result, info) {
+  const warn = document.getElementById('warn-extrap');
+  warn.style.display = result.extrapolating ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════
+// PREDICTION
+// ═══════════════════════════════════════════════════
+async function runPredict() {
+  const btn = document.getElementById('btn-predict');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  try {
+    const res = await fetch('/api/predict', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ params: getParams() }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      console.error('Predict error:', err);
+      return;
+    }
+    const result     = await res.json();
+    STATE.lastResult = result;
+    displayField(result);
+    checkExtrapolation(result, STATE.info);
+  } catch (e) {
+    console.error('Fetch error:', e);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+// Debounced auto-predict on slider changes
+function schedulePredict() {
+  clearTimeout(STATE.debounceTimer);
+  STATE.debounceTimer = setTimeout(runPredict, 350);
+}
+
+// ═══════════════════════════════════════════════════
+// TOOLTIP ON HOVER
+// ═══════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const mouse     = new THREE.Vector2();
+const tooltip   = document.getElementById('tooltip');
+
+renderer.domElement.addEventListener('mousemove', e => {
+  if (!meshObj || !STATE.lastResult) { tooltip.style.display = 'none'; return; }
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObject(meshObj);
+  if (hits.length === 0) { tooltip.style.display = 'none'; return; }
+  const face    = hits[0].face;
+  const indices = geom.index.array;
+  const vidx    = indices[face.a];  // use first vertex of hit triangle
+  const isT = STATE.field === 'T';
+  const isV = STATE.field === 'V';
+  const val = isT ? STATE.lastResult.T[vidx]
+            : isV ? STATE.lastResult.Vmag[vidx]
+            :       STATE.lastResult.P[vidx];
+  const txt = isT ? `T = ${val.toFixed(3)} K`
+            : isV ? `|V| = ${val.toFixed(4)} m/s`
+            :       `P = ${(val/1000).toFixed(4)} kPa`;
+  tooltip.textContent = txt;
+  tooltip.style.display = 'block';
+  tooltip.style.left    = (e.clientX - rect.left + 14) + 'px';
+  tooltip.style.top     = (e.clientY - rect.top  - 10) + 'px';
+});
+renderer.domElement.addEventListener('mouseleave', () => {
+  tooltip.style.display = 'none';
+});
+
+// ═══════════════════════════════════════════════════
+// STARTUP: fetch info + mesh, then run first prediction
+// ═══════════════════════════════════════════════════
+async function init() {
+  const ldSub = document.getElementById('ld-sub');
+
+  ldSub.textContent = 'Fetching ROM info …';
+  const infoRes = await fetch('/api/info');
+  STATE.info    = await infoRes.json();
+  initControls(STATE.info);
+
+  ldSub.textContent = 'Fetching 3D mesh …';
+  const meshRes  = await fetch('/api/mesh');
+  const meshData = await meshRes.json();
+  initMesh(meshData);
+  resizeRenderer();
+
+  document.getElementById('loading-overlay').classList.add('hidden');
+  STATE.meshLoaded = true;
+
+  // Run first prediction at the midpoint of each parameter
+  await runPredict();
+}
+
+init().catch(err => {
+  document.querySelector('.ld-text').textContent = 'Error loading ROM';
+  document.querySelector('.ld-sub').textContent  = String(err);
+  console.error(err);
+});
+</script>
 </body>
 </html>
